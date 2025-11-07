@@ -3,6 +3,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from openai import OpenAI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+# Allow your frontend domain
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://yukora.site"],  # your frontend domain
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 app = FastAPI()
 client = OpenAI(api_key="YOUR_OPENAI_API_KEY")
