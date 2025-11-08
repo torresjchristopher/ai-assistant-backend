@@ -14,7 +14,7 @@ SERPER_KEY = os.getenv("SERPER_API_KEY")
 # Allow frontend domain
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://yukora.site"],
+    allow_origins=["https://yukora.site", "http://localhost:5173", "http://localhost:4173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,8 +28,14 @@ class ChatRequest(BaseModel):
 def chat_stream(req: ChatRequest):
     def generate():
         messages = [{"role": "system", "content": "You are a smart assistant with live search ability."}]
+        
+        # Properly handle history with roles
         for h in req.history:
-            messages.append({"role": "user", "content": h["content"]})
+            # Each history item should have 'role' and 'content'
+            if isinstance(h, dict) and "role" in h and "content" in h:
+                messages.append({"role": h["role"], "content": h["content"]})
+        
+        # Add the current user message
         messages.append({"role": "user", "content": req.message})
 
         completion = client.chat.completions.create(
@@ -38,9 +44,11 @@ def chat_stream(req: ChatRequest):
             temperature=0.7,
             stream=True,
         )
+        
         for chunk in completion:
             if chunk.choices[0].delta.content:
                 yield json.dumps({"delta": chunk.choices[0].delta.content}) + "\n"
+    
     return StreamingResponse(generate(), media_type="text/event-stream")
 
 @app.get("/api/search")
